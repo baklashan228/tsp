@@ -8,8 +8,10 @@
 
 2. Список используемых технологий: 
 
-Front : HTML + CSS
+Front : HTML + CSS, Jinja2
 
 Back : python, django
 
 База данных : Postgre Sql
+
+Назаров, Яркоев 6304-010320D
