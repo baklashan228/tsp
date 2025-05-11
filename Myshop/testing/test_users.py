@@ -2,7 +2,7 @@ from faker import Faker
 fake=Faker()
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import Base, User, Order, Review, Product, Orderitem
+from Myshop.app import Base
 
 # Создание подключения к базе данных
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')
@@ -31,7 +31,7 @@ from faker import Faker
 fake=Faker()
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import Base, User, Order, Review, Product, Orderitem
+from Myshop.app import Base, User, Order, Review, Product, Orderitem
 
 # Создание подключения к базе данных
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')

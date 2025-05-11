@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from app import User, Review  # Импортируйте ваши модели
+from myshops import User, Review  # Импортируйте ваши модели
 
 # Создание подключения к базе данных
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')  # Замените на вашу строку подключения

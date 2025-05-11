@@ -3,7 +3,7 @@ fake=Faker()
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import Base, Review, User, Product
+from Myshop.app import Base, Review, User, Product
 
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')
 Base.metadata.create_all(engine)
@@ -42,7 +42,5 @@ def test_add_reviews():
     session.commit()
 
     reviews = session.query(Review).all()
-
-
 
 session.close()

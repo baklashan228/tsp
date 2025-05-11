@@ -13,7 +13,7 @@ with open('data.json', 'w') as file:
     json.dump(data_to_save, file, indent=4)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import Base, User, Category, Product, Review, Order, Orderitem  # Импортируйте ваши модели
+from myshops import Base, User, Category, Product, Review, Order, Orderitem  # Импортируйте ваши модели
 
 # Создание подключения к базе данных
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')  # Замените на вашу строку подключения

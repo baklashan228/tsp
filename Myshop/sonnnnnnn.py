@@ -2,9 +2,7 @@ import json
 # Запись данных в JSON-файл
 with open('data.json', 'w') as file:
     json.dump(data_to_save, file, indent=4)
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app import Base, User, Category, Product, Review, Order, Orderitem  # Импортируйте ваши модели
+from myshops import Review  # Импортируйте ваши модели
 
 for user in users:
     # Получаем отзывы для каждого пользователя

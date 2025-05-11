@@ -3,7 +3,7 @@ fake=Faker()
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app import Base, Product, Category
+from Myshop.app import Base, Product, Category
 
 engine = create_engine('postgresql://postgres:zolozz@localhost/labs')
 Base.metadata.create_all(engine)
