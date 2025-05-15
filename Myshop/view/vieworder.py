@@ -10,7 +10,7 @@ import json
 import logging
 from Myshop.cruda import (
     create_order, read_orders,
-    update_order, delete_order
+    update_order, delete_order, get_user_orders, user_exists
 )
 
 logger = logging.getLogger(__name__)
@@ -92,5 +92,31 @@ def order_detail_handler(request, order_id):
         except Exception as e:
             logger.error(f"DELETE order error: {str(e)}")
             return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+
+@csrf_exempt
+def user_orders_handler(request, user_id):
+    """Обрабатывает GET /users/<user_id>/orders/"""
+    if request.method == 'GET':
+        try:
+            # Проверяем существование пользователя
+            if not user_exists(user_id):
+                return JsonResponse(
+                    {"error": f"User with id {user_id} not found"},
+                    status=404
+                )
+
+            orders = get_user_orders(user_id)
+            return JsonResponse({"orders": orders}, safe=False)
+
+        except Exception as e:
+            logger.error(f"GET user orders error: {str(e)}")
+            return JsonResponse(
+                {"error": "Internal server error"},
+                status=500
+            )
 
     return JsonResponse({"error": "Method not allowed"}, status=405)

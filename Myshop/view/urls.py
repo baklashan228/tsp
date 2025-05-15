@@ -24,6 +24,7 @@ urlpatterns = [
     path('order-items/<int:order_item_id>/', vieworderitem.order_item_detail_handler),  # GET/PUT/DELETE
     path('reviews/', viewreview.reviews_handler),  # GET-список и POST-создание
     path('reviews/<int:review_id>/', viewreview.review_detail_handler),  # GET/PUT/DELETE
+path('users/<int:user_id>/orders/', vieworder.user_orders_handler),
 
 
 ]

@@ -1,0 +1,14 @@
+{
+    "users": [
+        {
+            "user_id": 1,
+            "username": "johndffddffd_doe",
+            "email": "john@dfdfdfdfdfexample.com"
+        },
+        {
+            "user_id": 2,
+            "username": "jane_dfdfdfdfdfdfdoe",
+            "email": "jane@fddfdfdfdfexample.com"
+        }
+    ]
+}

@@ -163,13 +163,31 @@ def delete_category(category_id):
             conn.close()
 # Create Product
 def create_product(name, description, price, stock, category_id):
-    conn = init_db()
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO "Product" (name, description, price, stock, category_id) VALUES (%s, %s, %s, %s, %s)',
-                   (name, description, price, stock, category_id))
-    conn.commit()
-    conn.close()
+    conn = None
+    try:
+        conn = init_db()
+        cursor = conn.cursor()
 
+        # 1. Проверяем существование категории
+        cursor.execute('SELECT 1 FROM "Category" WHERE category_id = %s', (category_id,))
+        if not cursor.fetchone():
+            raise ValueError("Данный продукт нельзя добавить, потому что такой категории не существует")
+
+        # 2. Если категория существует, добавляем продукт
+        cursor.execute(
+            'INSERT INTO "Product" (name, description, price, stock, category_id) VALUES (%s, %s, %s, %s, %s)',
+            (name, description, price, stock, category_id)
+        )
+        conn.commit()
+        return True
+
+    except Exception as e:
+        if conn:
+            conn.rollback()  # Откатываем изменения при ошибке
+        raise e  # Пробрасываем исключение дальше
+    finally:
+        if conn:
+            conn.close()  # Всегда закрываем соединение
 # Read Products
 def read_products():
     conn = None
@@ -620,6 +638,52 @@ def delete_review(review_id):
         if conn:
             conn.rollback()
         raise e
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_user_order_item(user_id, order_id, order_item_id, product_id):
+    """Получает конкретный товар в заказе пользователя"""
+    conn = None
+    try:
+        conn = init_db()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT 
+                o.order_id,
+                o.order_date,
+                o.status,
+                oi.order_item_id,
+                oi.quantity,
+                oi.price,
+                p.product_id,
+                p.name as product_name,
+                p.description as product_description,
+                c.category_id,
+                c.name as category_name
+            FROM "Order" o
+            JOIN "Orderitem" oi ON o.order_id = oi.order_id
+            JOIN "Product" p ON oi.product_id = p.product_id
+            JOIN "Category" c ON p.category_id = c.category_id
+            WHERE o.user_id = %s 
+              AND o.order_id = %s 
+              AND oi.order_item_id = %s 
+              AND p.product_id = %s
+        """, (user_id, order_id, order_item_id, product_id))
+
+        columns = [col[0] for col in cursor.description]
+        result = cursor.fetchone()
+
+        if not result:
+            return None
+
+        return dict(zip(columns, result))
+
+    except Exception as e:
+        print(f"Error getting order item: {str(e)}")
+        raise
     finally:
         if conn:
             conn.close()
