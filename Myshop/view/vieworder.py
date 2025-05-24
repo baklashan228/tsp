@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from pydantic import BaseModel
 from Myshop.cruda import create_order as crud_create_order, read_orders as crud_read_orders, update_order as crud_update_order, delete_order as crud_delete_order  # Импортируйте ваш CRUD модуль
-
+from django.db import transaction
 router = APIRouter()
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -10,11 +10,12 @@ import json
 import logging
 from Myshop.cruda import (
     create_order, read_orders,
-    update_order, delete_order, get_user_orders, user_exists
+    update_order, delete_order, get_user_orders_structure
 )
 
 logger = logging.getLogger(__name__)
 
+    # остальные поля
 
 @csrf_exempt
 def orders_handler(request):
@@ -31,16 +32,16 @@ def orders_handler(request):
         try:
             data = json.loads(request.body)
 
-            # Валидация
-            required_fields = ['user_id', 'status', 'total_amount']
+            # Валидация (total_amount удален)
+            required_fields = ['user_id', 'status']
             for field in required_fields:
                 if field not in data:
                     raise ValueError(f"Missing required field: {field}")
 
+            # Вызов функции без total_amount
             order_id = create_order(
                 user_id=data['user_id'],
-                status=data['status'],
-                total_amount=float(data['total_amount'])
+                status=data['status']
             )
 
             return JsonResponse(
@@ -52,9 +53,6 @@ def orders_handler(request):
         except Exception as e:
             logger.error(f"POST order error: {str(e)}")
             return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
 
 @csrf_exempt
 def order_detail_handler(request, order_id):
@@ -96,27 +94,28 @@ def order_detail_handler(request, order_id):
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
-
 @csrf_exempt
-def user_orders_handler(request, user_id):
-    """Обрабатывает GET /users/<user_id>/orders/"""
+def user_orders_structure_handler(request, user_id):
+    """Обрабатывает GET /users/<user_id>/orders-structure/"""
     if request.method == 'GET':
         try:
-            # Проверяем существование пользователя
-            if not user_exists(user_id):
-                return JsonResponse(
-                    {"error": f"User with id {user_id} not found"},
-                    status=404
-                )
 
-            orders = get_user_orders(user_id)
-            return JsonResponse({"orders": orders}, safe=False)
+
+            # Получаем данные
+            data = get_user_orders_structure(user_id)
+
+            # Если нет заказов
+            if not data['orders']:
+                data['message'] = "No orders found for this user"
+
+            return JsonResponse(data)
 
         except Exception as e:
-            logger.error(f"GET user orders error: {str(e)}")
+            logger.error(f"Orders structure error: {str(e)}")
             return JsonResponse(
                 {"error": "Internal server error"},
                 status=500
             )
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+

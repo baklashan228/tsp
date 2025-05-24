@@ -1,8 +1,11 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text, Numeric, ForeignKey, TIMESTAMP, CheckConstraint, \
-    MetaData
+    MetaData, DateTime
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
-
+from sqlalchemy import Column, Integer, String, TIMESTAMP
+from sqlalchemy.ext.declarative import declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
 # Создаем объект Metadata
 metadata = MetaData()
 
@@ -16,7 +19,15 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
+    password_hash = Column(String(128), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+    # Методы для работы с паролем
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
     reviews = relationship("Review", back_populates="user")
@@ -86,3 +97,14 @@ class Orderitem(Base):
 
     order = relationship("Order", back_populates="order_items")
     product = relationship("Product", back_populates="order_items")
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    session_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    user = relationship("User", back_populates="sessions")

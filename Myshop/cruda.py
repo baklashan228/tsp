@@ -1,29 +1,35 @@
 from Myshop.database import init_db
-
-
-
+from typing import Optional
+import uuid, psycopg2
+from typing import Optional, Tuple
+from sqlalchemy import DateTime
+from werkzeug.security import check_password_hash
+from datetime import datetime, timedelta
 # Create User
-def create_user(user_id, username, email):
+def create_user(username: str, email: str, password_hash: str) -> bool:
     conn = None
     try:
         conn = init_db()
         cursor = conn.cursor()
 
-        # Правильный синтаксис для PostgreSQL:
         cursor.execute(
-            'INSERT INTO "User" (user_id, username, email) VALUES (%s, %s, %s)',
-            (user_id, username, email)
-        )
+            '''INSERT INTO "User" (email, username, password_hash)
+               VALUES (%s, %s, %s)
+               RETURNING user_id''',
+            (email, username, password_hash))
+
+        user_id = cursor.fetchone()[0]
         conn.commit()
-        return True
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        raise e
+        return user_id
+
+    except psycopg2.IntegrityError as e:
+        if 'unique constraint "user_email_key"' in str(e):
+            raise ValueError("Email already exists") from e
+        raise
     finally:
         if conn:
+            cursor.close()
             conn.close()
-
 # Read Users
 def read_users():
     conn = init_db()
@@ -309,27 +315,55 @@ def delete_review(review_id):
 
 # Create Order
 # Создание заказа
-def create_order(user_id, status, total_amount):
-    conn = None
+from contextlib import contextmanager
+
+
+def create_order(user_id: int, status: str = "pending") -> int:
+    """
+    Создает новый заказ в базе данных.
+
+    Args:
+        user_id: Идентификатор пользователя
+        status: Статус заказа (по умолчанию "pending")
+
+    Returns:
+        Идентификатор созданного заказа (order_id)
+    """
+
+    @contextmanager
+    def get_cursor():
+        """Контекстный менеджер для управления подключением"""
+        conn = None
+        try:
+            conn = init_db()
+            cursor = conn.cursor()
+            yield cursor
+            conn.commit()
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
+
     try:
-        conn = init_db()
-        cursor = conn.cursor()
-        cursor.execute(
-            """INSERT INTO "Order" 
-            (user_id, status, total_amount) 
-            VALUES (%s, %s, %s) RETURNING order_id""",
-            (user_id, status, total_amount)
-        )
-        order_id = cursor.fetchone()[0]
-        conn.commit()
-        return order_id
+        with get_cursor() as cursor:
+            # Исправленный запрос (total_amount удален из INSERT)
+            cursor.execute(
+                """
+                INSERT INTO "Order" (user_id, status)
+                VALUES (%s, %s)
+                RETURNING order_id
+                """,
+                (user_id, status)
+            )
+            order_id = cursor.fetchone()[0]
+            return order_id
+
     except Exception as e:
-        if conn:
-            conn.rollback()
-        raise e
-    finally:
-        if conn:
-            conn.close()
+        logger.error(f"Error creating order: {str(e)}")
+        raise RuntimeError("Failed to create order") from e
 
 
 # Получение списка заказов
@@ -408,38 +442,6 @@ def delete_order(order_id):
 
 
 # Создание OrderItem
-def create_order_item(order_id, product_id, quantity, price):
-    conn = None
-    try:
-        conn = init_db()
-        cursor = conn.cursor()
-
-        # Проверка существования заказа и продукта
-        cursor.execute('SELECT 1 FROM "Order" WHERE order_id = %s', (order_id,))
-        if not cursor.fetchone():
-            raise ValueError("Order not found")
-
-        cursor.execute('SELECT 1 FROM "Product" WHERE product_id = %s', (product_id,))
-        if not cursor.fetchone():
-            raise ValueError("Product not found")
-
-        cursor.execute(
-            """INSERT INTO "Orderitem" 
-            (order_id, product_id, quantity, price) 
-            VALUES (%s, %s, %s, %s) RETURNING order_item_id""",
-            (order_id, product_id, quantity, price)
-        )
-        item_id = cursor.fetchone()[0]
-        conn.commit()
-        return item_id
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        raise e
-    finally:
-        if conn:
-            conn.close()
-
 
 # Получение всех элементов заказа
 def get_order_items(order_id=None):
@@ -622,68 +624,301 @@ def update_review(review_id, **fields):
             conn.close()
 
 
-# Удаление отзыва
-def delete_review(review_id):
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def get_user_orders_structure(user_id):
     conn = None
     try:
         conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return {"user_id": user_id, "orders": [], "error": "DB connection failed"}
+
         cursor = conn.cursor()
-        cursor.execute(
-            'DELETE FROM "Review" WHERE review_id = %s',
-            (review_id,)
-        )
-        conn.commit()
-        return cursor.rowcount > 0
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        raise e
-    finally:
-        if conn:
-            conn.close()
-
-
-def get_user_order_item(user_id, order_id, order_item_id, product_id):
-    """Получает конкретный товар в заказе пользователя"""
-    conn = None
-    try:
-        conn = init_db()
-        cursor = conn.cursor()
-
         cursor.execute("""
             SELECT 
-                o.order_id,
-                o.order_date,
-                o.status,
-                oi.order_item_id,
-                oi.quantity,
-                oi.price,
-                p.product_id,
-                p.name as product_name,
-                p.description as product_description,
-                c.category_id,
-                c.name as category_name
-            FROM "Order" o
-            JOIN "Orderitem" oi ON o.order_id = oi.order_id
-            JOIN "Product" p ON oi.product_id = p.product_id
-            JOIN "Category" c ON p.category_id = c.category_id
-            WHERE o.user_id = %s 
-              AND o.order_id = %s 
-              AND oi.order_item_id = %s 
-              AND p.product_id = %s
-        """, (user_id, order_id, order_item_id, product_id))
+                "Order".order_id,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'order_item_id', "Orderitem".order_item_id,
+                            'product_id', "Orderitem".product_id,
+                            'product_name', "Product".name,
+                            'category_id', "Product".category_id,
+                            'quantity', "Orderitem".quantity
+                        )
+                    ) FILTER (WHERE "Orderitem".order_item_id IS NOT NULL),
+                    '[]'::json
+                ) AS items,
+                COALESCE(SUM("Order".total_amount), 0) AS total_amount
+            FROM "Order"
+            LEFT JOIN "Orderitem" ON "Order".order_id = "Orderitem".order_id
+            LEFT JOIN "Product" ON "Orderitem".product_id = "Product".product_id
+            WHERE "Order".user_id = %s
+            GROUP BY "Order".order_id
+            ORDER BY "Order".order_id DESC
+        """, (user_id,))
 
-        columns = [col[0] for col in cursor.description]
-        result = cursor.fetchone()
+        orders = []
+        for row in cursor.fetchall():
+            orders.append({
+                "order_id": row[0],
+                "items": row[1],
+                "total_amount": row[2]  # Добавляем total_amount в структуру заказа
+            })
 
-        if not result:
-            return None
-
-        return dict(zip(columns, result))
+        return {
+            "user_id": user_id,
+            "orders": orders,
+            "message": "No orders found" if not orders else None
+        }
 
     except Exception as e:
-        print(f"Error getting order item: {str(e)}")
-        raise
+        logger.error(f"Error in get_user_orders_structure: {str(e)}", exc_info=True)
+        return {
+            "user_id": user_id,
+            "orders": [],
+            "error": str(e)
+        }
+
     finally:
         if conn:
             conn.close()
+
+
+
+def get_or_create_pending_order(user_id: int) -> Optional[int]:
+    """Находит или создает заказ со статусом 'pending'"""
+    conn = None
+    try:
+        conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return None
+
+        with conn.cursor() as cursor:
+            # Поиск существующего заказа
+            cursor.execute(
+                """
+                SELECT order_id 
+                FROM "Order" 
+                WHERE user_id = %s 
+                AND status = 'pending' 
+                ORDER BY order_date DESC 
+                LIMIT 1
+                """,
+                (user_id,)
+            )
+            order = cursor.fetchone()
+
+            if not order:
+                # Создание нового заказа
+                cursor.execute(
+                    """
+                    INSERT INTO "Order" (user_id, status, total_amount)
+                    VALUES (%s, 'pending', 0)
+                    RETURNING order_id
+                    """,
+                    (user_id,)
+                )
+                order = cursor.fetchone()
+                conn.commit()
+
+            return order[0] if order else None
+
+    except Exception as e:
+        logger.error(f"Error in get_or_create_pending_order: {str(e)}")
+        if conn:
+            conn.rollback()
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_product_price(product_id: int) -> Optional[float]:
+    """Возвращает цену товара из базы"""
+    conn = None
+    try:
+        conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return None
+
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT price FROM "Product" WHERE product_id = %s',
+                (product_id,)
+            )
+            product = cursor.fetchone()
+            return float(product[0]) if product else None
+
+    except Exception as e:
+        logger.error(f"Error in get_product_price: {str(e)}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+# crud.py
+def create_order_item(order_id: int, product_id: int, quantity: int, price: float) -> int:
+    """Добавляет или обновляет позицию в заказе"""
+    conn = None
+    try:
+        conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return None
+
+        with conn.cursor() as cursor:
+            # 1. Попытка обновить существующую позицию
+            cursor.execute(
+                """
+                UPDATE "Orderitem" 
+                SET quantity = quantity + %s
+                WHERE order_id = %s AND product_id = %s
+                RETURNING order_item_id
+                """,
+                (quantity, order_id, product_id)
+            )
+            updated_item = cursor.fetchone()
+
+            # 2. Если позиция не найдена - создаем новую
+            if not updated_item:
+                cursor.execute(
+                    """
+                    INSERT INTO "Orderitem" (order_id, product_id, quantity, price)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING order_item_id
+                    """,
+                    (order_id, product_id, quantity, price)
+                )
+                updated_item = cursor.fetchone()
+
+            # 3. Обновляем общую сумму заказа
+            cursor.execute(
+                """
+                UPDATE "Order" 
+                SET total_amount = total_amount + (%s * %s)
+                WHERE order_id = %s
+                """,
+                (quantity, price, order_id)
+            )
+
+            conn.commit()
+            return updated_item[0]
+
+    except Exception as e:
+        logger.error(f"Error in create_or_update_order_item: {str(e)}")
+        if conn:
+            conn.rollback()
+        return None
+    finally:
+        if conn:
+            conn.close()
+# crud.py
+def check_user_exists(user_id: int) -> bool:
+    """Проверяет существование пользователя в базе"""
+    conn = None
+    try:
+        conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return False
+
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT 1 FROM "User" WHERE user_id = %s',
+                (user_id,)
+            )
+            return bool(cursor.fetchone())
+
+    except Exception as e:
+        logger.error(f"Error in check_user_exists: {str(e)}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_max_user_id() -> int:
+    """
+    Возвращает максимальный user_id из таблицы User.
+    Возвращает 0, если таблица пуста или произошла ошибка.
+    """
+    conn = None
+    try:
+        conn = init_db()
+        if not conn:
+            logger.error("Database connection failed")
+            return 0
+
+        with conn.cursor() as cursor:
+            # Выполняем SQL-запрос
+            cursor.execute("SELECT MAX(user_id) FROM \"User\"")
+            result = cursor.fetchone()
+
+            # Обрабатываем результат
+            max_id = result[0] if result else 0
+            return max_id if max_id is not None else 0
+
+    except Exception as e:
+        logger.error(f"Error getting max user_id: {str(e)}")
+        return 0
+    finally:
+        if conn:
+            conn.close()
+
+
+def create_user_session(user_id: int) -> Optional[str]:
+    """Создание новой сессии пользователя"""
+    conn = None
+    try:
+        session_id = str(uuid.uuid4())
+        conn = init_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            '''INSERT INTO public.session (session_id, user_id)
+               VALUES (%s, %s)''',
+            (session_id, user_id))
+        conn.commit()
+        return session_id
+
+    except psycopg2.IntegrityError:
+        print("Session ID collision, retrying...")
+        return create_user_session(user_id)  # Рекурсия при коллизии
+    except psycopg2.Error as e:
+        print(f"Session creation error: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_user_by_email(email: str) -> Optional[Tuple]:
+    """Получение пользователя по email"""
+    conn = None
+    try:
+        conn = init_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            'SELECT user_id, username, password_hash FROM "User" WHERE email = %s',
+            (email,)
+        )
+        return cursor.fetchone()
+
+    except psycopg2.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+def verify_password(hash_password: str, stored_password: str) -> bool:
+    return hash_password == stored_password

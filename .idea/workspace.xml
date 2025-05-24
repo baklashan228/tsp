@@ -5,9 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e4fe94a0-94ce-4c48-83f3-e04774a0df2d" name="Changes" comment="Lab2">
+      <change afterPath="$PROJECT_DIR$/Myshop/view/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Myshop/alembic/env.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/alembic/env.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Myshop/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Myshop/cruda.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/cruda.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Myshop/view/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/view/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Myshop/view/vieworder.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/view/vieworder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Myshop/view/vieworderitem.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/view/vieworderitem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Myshop/view/viewuser.py" beforeDir="false" afterPath="$PROJECT_DIR$/Myshop/view/viewuser.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,14 +85,36 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\gutur\PycharmProjects\tsp\Myshop" />
       <recent name="C:\Users\gutur\PycharmProjects\tsp\myshops" />
       <recent name="C:\Users\gutur\PycharmProjects\tsp" />
       <recent name="C:\Users\gutur\PycharmProjects\tsp\Myshop\view" />
       <recent name="C:\Users\gutur\PycharmProjects\tsp\Myshop\myshop" />
-      <recent name="C:\Users\gutur\PycharmProjects\tsp\Myshop" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.cruda">
+  <component name="RunManager" selected="Python.viewuser">
+    <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="tsp" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Myshop" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Myshop/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="cruda" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="tsp" />
       <option name="ENV_FILES" value="" />
@@ -153,7 +181,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="manage" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="viewuser" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="tsp" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -162,33 +190,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Myshop" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Myshop/view" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\gutur\PycharmProjects\tsp\manage.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="urls" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="tsp" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Myshop/myshop" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\gutur\PycharmProjects\tsp\myshops\urls.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Myshop/view/viewuser.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -205,11 +211,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.viewuser" />
+        <item itemvalue="Python.app" />
         <item itemvalue="Python.cruda" />
         <item itemvalue="Python.database" />
         <item itemvalue="Python.main (2)" />
-        <item itemvalue="Python.manage" />
-        <item itemvalue="Python.urls" />
       </list>
     </recent_temporary>
   </component>
@@ -245,7 +251,15 @@
       <option name="project" value="LOCAL" />
       <updated>1746970365720</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Lab2">
+      <option name="closed" value="true" />
+      <created>1747344749457</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747344749457</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

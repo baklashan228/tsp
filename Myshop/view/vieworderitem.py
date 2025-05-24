@@ -2,9 +2,15 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
+
+from sympy.physics.units.util import quantity_simplify
+
 from Myshop.cruda import (
     create_order_item, get_order_items,
-    update_order_item, delete_order_item
+    update_order_item, delete_order_item,
+    get_or_create_pending_order,
+    get_product_price,
+    create_order_item, check_user_exists
 )
 
 logger = logging.getLogger(__name__)
@@ -26,31 +32,44 @@ def order_items_handler(request):
             data = json.loads(request.body)
 
             # Валидация
-            required_fields = ['order_id', 'product_id', 'quantity', 'price']
+            required_fields = ['user_id', 'product_id', 'quantity']
             for field in required_fields:
                 if field not in data:
                     raise ValueError(f"Missing required field: {field}")
 
+            # Проверка существования пользователя и товара
+            if not check_user_exists(data['user_id']):
+                raise ValueError("User not found")
+
+            price = get_product_price(data['product_id'])
+            if not price:
+                raise ValueError("Product not found")
+
+            # Получаем или создаем заказ
+            order_id = get_or_create_pending_order(data['user_id'])
+
+            # Добавляем/обновляем позицию
             item_id = create_order_item(
-                order_id=data['order_id'],
+                order_id=order_id,
                 product_id=data['product_id'],
-                quantity=int(data['quantity']),
-                price=float(data['price'])
+                quantity=data['quantity'],
+                price=price
             )
 
-            return JsonResponse(
-                {"message": "Order item created", "order_item_id": item_id},
-                status=201
-            )
+            return JsonResponse({
+                "message": "Order item processed",
+                "order_id": order_id,
+                "order_item_id": item_id,
+                "action": "updated" if item_id else "created"
+            }, status=201)
+
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
         except Exception as e:
-            logger.error(f"POST order item error: {str(e)}")
-            return JsonResponse({"error": str(e)}, status=500)
+            logger.error(f"Error: {str(e)}")
+            return JsonResponse({"error": "Internal server error"}, status=500)
 
-    return JsonResponse({"error": "Method not allowed"}, status=405)
-
-
+        return JsonResponse({"error": "Method not allowed"}, status=405)
 @csrf_exempt
 def order_item_detail_handler(request, order_item_id):
     """Обрабатывает GET, PUT, DELETE /order-items/<id>/"""
@@ -64,7 +83,6 @@ def order_item_detail_handler(request, order_item_id):
         except Exception as e:
             logger.error(f"GET order item error: {str(e)}")
             return JsonResponse({"error": str(e)}, status=500)
-
     elif request.method == 'PUT':
         try:
             data = json.loads(request.body)
